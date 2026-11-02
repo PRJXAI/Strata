@@ -230,6 +230,9 @@ class ModelRouter:
         with self.condition:
             self.closing = True
             self.condition.notify_all()
+            # Loading and non-streamed inference may be blocked on backend I/O. Parent-death protection also ends its engine.
+            if self.busy and self.proc is not None and self.proc.poll() is None:
+                self.proc.kill()
             while self.busy:
                 self.condition.wait(0.1)
         self.stop_model()

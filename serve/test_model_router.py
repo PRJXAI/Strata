@@ -131,6 +131,26 @@ class ModelRouting(unittest.TestCase):
                     self.assertEqual(next_model.result()[0], 200)
             self.assertIsNotNone(old.poll())
 
+    def test_shutdown_ends_active_inference_without_waiting_for_generation(self):
+        self.start()
+        from serve import lifeline
+        popen = lifeline.popen
+
+        def delayed(args, **kw):
+            return popen([*args, "--script-delay", "0.2"], **kw)
+
+        with mock.patch("serve.model_router.lifeline.popen", side_effect=delayed):
+            req = urllib.request.Request(self.url + "/v1/chat/completions", json.dumps({
+                "model": "stock", "messages": [{"role": "user", "content": "Hello"}], "stream": True}).encode(),
+                {"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=30) as stream:
+                self.assertTrue(stream.readline())
+                old = self.router.proc
+                started = time.monotonic()
+                self.router.close()
+                self.assertLess(time.monotonic()-started, 5)
+                self.assertIsNotNone(old.poll())
+
     def test_sampling_thinking_tools_and_uncapped_values_are_forwarded_verbatim(self):
         self.start()
         from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
