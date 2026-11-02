@@ -66,6 +66,12 @@ def parser() -> argparse.ArgumentParser:
     serve.add_argument("--json", action="store_true", help="alias for --plan --output json")
     serve.add_argument("--quiet", action="store_true", help="suppress human informational output")
 
+    models = sp.add_parser("serve-models", help="serve several models on demand, with one resident at a time")
+    models.add_argument("--config", required=True, metavar="MODELS.json")
+    models.add_argument("--host")
+    models.add_argument("--port", type=int)
+    models.add_argument("--engine", choices=("strata", "mock"), default="strata")
+
     profile = sp.add_parser("profile", help="edit saved serving overrides outside setup's run config")
     profile_sp = profile.add_subparsers(dest="profile_command", required=True)
     profile_create = profile_sp.add_parser("create", help="save a named profile from an installed run config")
@@ -2120,6 +2126,14 @@ def _run(a: argparse.Namespace) -> int:
     try:
         if a.command == "serve":
             return _serve(a)
+        if a.command == "serve-models":
+            from serve.model_router import main as router_main
+            args = ["--config", a.config, "--engine", a.engine]
+            if a.host is not None:
+                args += ["--host", a.host]
+            if a.port is not None:
+                args += ["--port", str(a.port)]
+            return router_main(args)
         if a.command == "install":
             return _install(a)
         if a.command == "repair-access":

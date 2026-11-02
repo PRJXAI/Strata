@@ -332,6 +332,12 @@ the engine args. `--pcie-frac 0` costs decode speed, so keep it for A/B runs.
 
 ---
 
+## Several models on one API (optional)
+
+`strata serve-models --config models.json` loads the requested model on demand and keeps only one resident.
+It queues requests through model switches and supports streaming. See [MULTI_MODELS.md](MULTI_MODELS.md) for the
+config, endpoints and limits. Ordinary single-model serving is unchanged.
+
 ## Sharing the GPU with other programs (optional)
 
 By default the model stays loaded until you close Strata. Three server options, all off by default and also keys in

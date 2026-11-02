@@ -47,6 +47,11 @@ class OperatorProfileTests(unittest.TestCase):
             code = main(list(args))
         return code, json.loads(output.getvalue())
 
+    def test_multi_model_serving_dispatch_is_opt_in(self):
+        with mock.patch("serve.model_router.main", return_value=0) as router:
+            self.assertEqual(main(["serve-models", "--config", "models.json", "--port", "8081"]), 0)
+        router.assert_called_once_with(["--config", "models.json", "--engine", "strata", "--port", "8081"])
+
     def test_saved_overrides_drive_serve_plan_without_rewriting_run_config_or_starting(self):
         before = self.config.read_bytes()
         code, created = self.command("profile", "create", "four-gpu", "--from-config", str(self.config),
